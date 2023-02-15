@@ -32,12 +32,14 @@ from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
     GPTPineconeIndex,
+    GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 # prompts
@@ -59,21 +61,29 @@ from gpt_index.readers import (
     DiscordReader,
     Document,
     FaissReader,
+    GithubRepositoryReader,
     GoogleDocsReader,
+    MboxReader,
     NotionPageReader,
+    ObsidianReader,
     PineconeReader,
+    QdrantReader,
+    RssReader,
     SimpleDirectoryReader,
     SimpleMongoReader,
     SimpleWebPageReader,
     SlackReader,
     StringIterableReader,
     TrafilaturaWebReader,
+    TwitterTweetReader,
     WeaviateReader,
     WikipediaReader,
 )
+from gpt_index.readers.download import download_loader
 
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
+from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
 __all__ = [
     "GPTKeywordTableIndex",
@@ -85,6 +95,7 @@ __all__ = [
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
     "GPTPineconeIndex",
+    "GPTQdrantIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
@@ -98,26 +109,42 @@ __all__ = [
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
     "WikipediaReader",
+    "ObsidianReader",
     "Document",
     "SimpleDirectoryReader",
     "SimpleMongoReader",
     "NotionPageReader",
     "GoogleDocsReader",
+    "MboxReader",
     "SlackReader",
     "StringIterableReader",
     "WeaviateReader",
     "FaissReader",
     "PineconeReader",
+    "QdrantReader",
     "DiscordReader",
     "SimpleWebPageReader",
+    "RssReader",
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "MockEmbedding",
     "SQLDatabase",
+    "GPTIndexMemory",
     "SQLContextBuilder",
     "PromptHelper",
     "QueryConfig",
     "QueryMode",
     "IndexStructType",
+    "TwitterTweetReader",
+    "download_loader",
+    "GithubRepositoryReader",
 ]
+
+import logging
+from logging import NullHandler
+
+# best practices for library logging:
+# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
+logging.getLogger(__name__).addHandler(NullHandler())

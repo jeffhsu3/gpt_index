@@ -1,11 +1,16 @@
 """Tree-based index."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Type
 
 from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
+from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
+from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -69,6 +74,16 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             **kwargs,
         )
 
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTTreeIndexLeafQuery,
+            QueryMode.EMBEDDING: GPTTreeIndexEmbeddingQuery,
+            QueryMode.RETRIEVE: GPTTreeIndexRetQuery,
+            QueryMode.SUMMARIZE: GPTTreeIndexSummarizeQuery,
+        }
+
     def _validate_build_tree_required(self, mode: QueryMode) -> None:
         """Check if index supports modes that require trees."""
         if mode in REQUIRE_TREE_MODES and not self.build_tree:
@@ -83,7 +98,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self._validate_build_tree_required(mode)
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> IndexGraph:
         """Build the index from documents."""
         # do simple concatenation
@@ -94,7 +109,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._prompt_helper,
         )
         index_graph = index_builder.build_from_text(
-            documents, build_tree=self.build_tree, verbose=verbose
+            documents, build_tree=self.build_tree
         )
         return index_graph
 

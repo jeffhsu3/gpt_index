@@ -69,6 +69,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    how_to/vector_stores.md
    how_to/custom_prompts.md
    how_to/custom_llms.md
+   how_to/using_with_langchain.md
 
 
 .. toctree::
@@ -77,6 +78,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
 
    reference/indices.rst
    reference/query.rst
+   reference/composability.rst
    reference/readers.rst
    reference/prompts.rst
    reference/llm_predictor.rst
@@ -85,3 +87,10 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    reference/struct_store.rst
    reference/response.rst
    reference/example_notebooks.rst
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Gallery
+
+   gallery/app_showcase.md

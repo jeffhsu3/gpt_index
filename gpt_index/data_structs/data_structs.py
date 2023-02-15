@@ -3,7 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -51,17 +51,22 @@ class Node(IndexStruct):
     # reference document id
     ref_doc_id: Optional[str] = None
 
+    # extra node info
+    node_info: Optional[Dict[str, Any]] = None
+
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
-        if self.extra_info is not None:
-            extra_info_str = "\n".join(
-                [f"{k}: {str(v)}" for k, v in self.extra_info.items()]
-            )
-        else:
-            extra_info_str = None
-        result_text = text if extra_info_str is None else f"{extra_info_str}\n\n{text}"
+        result_text = (
+            text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
+        )
         return result_text
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        # TODO: consolidate with IndexStructType
+        return "node"
 
 
 @dataclass
@@ -95,6 +100,11 @@ class IndexGraph(IndexStruct):
             parent_node.child_indices.add(node.index)
 
         self.all_nodes[node.index] = node
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "tree"
 
 
 @dataclass
@@ -139,6 +149,11 @@ class KeywordTable(IndexStruct):
         """Get the size of the table."""
         return len(self.table)
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "keyword_table"
+
 
 @dataclass
 class IndexList(IndexStruct):
@@ -150,6 +165,11 @@ class IndexList(IndexStruct):
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
         self.nodes.append(node)
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "list"
 
 
 @dataclass
@@ -196,6 +216,11 @@ class BaseIndexDict(IndexStruct):
         """Get node."""
         return self.get_nodes([text_id])[0]
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "dict"
+
 
 # TODO: this should be specific to FAISS
 @dataclass
@@ -205,6 +230,11 @@ class IndexDict(BaseIndexDict):
     Note: this index structure is specifically used with the Faiss index.
 
     """
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "dict"
 
 
 @dataclass
@@ -225,6 +255,11 @@ class SimpleIndexDict(BaseIndexDict):
         elif not isinstance(text_id, str):
             raise ValueError("text_id must be a string.")
         self.embedding_dict[text_id] = embedding
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "simple_dict"
 
 
 @dataclass
@@ -249,6 +284,11 @@ class WeaviateIndexStruct(IndexStruct):
             raise ValueError("class_prefix must be provided.")
         return self.class_prefix
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "weaviate"
+
 
 @dataclass
 class PineconeIndexStruct(IndexStruct):
@@ -257,3 +297,97 @@ class PineconeIndexStruct(IndexStruct):
     Docs are stored in Pinecone directly.
 
     """
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "pinecone"
+
+
+@dataclass
+class QdrantIndexStruct(IndexStruct):
+    """And index struct for Qdrant.
+
+    Docs are stored in Qdrant directly.
+    This index struct helps to store the collection name
+
+    """
+
+    collection_name: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        if self.collection_name is None:
+            raise ValueError("collection_name must be provided.")
+
+    def get_collection_name(self) -> str:
+        """Get class prefix."""
+        if self.collection_name is None:
+            raise ValueError("collection_name must be provided.")
+        return self.collection_name
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "qdrant"
+
+
+@dataclass
+class KG(IndexStruct):
+    """A table of keywords mapping keywords to text chunks."""
+
+    # Unidirectional
+
+    table: Dict[str, Set[str]] = field(default_factory=dict)
+    text_chunks: Dict[str, Node] = field(default_factory=dict)
+    rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+
+    def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
+        """Upsert a knowledge triplet to the graph."""
+        subj, relationship, obj = triplet
+        self.add_node([subj, obj], node)
+        if subj not in self.rel_map:
+            self.rel_map[subj] = []
+        self.rel_map[subj].append((obj, relationship))
+
+    def add_node(self, keywords: List[str], node: Node) -> None:
+        """Add text to table."""
+        node_id = node.get_doc_id()
+        for keyword in keywords:
+            if keyword not in self.table:
+                self.table[keyword] = set()
+            self.table[keyword].add(node_id)
+        self.text_chunks[node_id] = node
+
+    def get_rel_map_texts(self, keyword: str) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        # NOTE: return a single node for now
+        if keyword not in self.rel_map:
+            return []
+        texts = []
+        for obj, rel in self.rel_map[keyword]:
+            texts.append(str((keyword, rel, obj)))
+        return texts
+
+    def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        if depth > 1:
+            raise ValueError("Depth > 1 not supported yet.")
+        if keyword not in self.table:
+            return []
+        keywords = [keyword]
+        # some keywords may correspond to a leaf node, may not be in rel_map
+        if keyword in self.rel_map:
+            keywords.extend([child for child, _ in self.rel_map[keyword]])
+
+        node_ids: List[str] = []
+        for keyword in keywords:
+            for node_id in self.table.get(keyword, set()):
+                node_ids.append(node_id)
+            # TODO: Traverse (with depth > 1)
+        return node_ids
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "kg"

@@ -4,12 +4,14 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Optional, Sequence, cast
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from gpt_index.data_structs.data_structs import PineconeIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.vector_store.pinecone import GPTPineconeIndexQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -51,6 +53,7 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
         embed_model: Optional[BaseEmbedding] = None,
         pinecone_index: Optional[Any] = None,
         chunk_size_limit: int = 2048,
+        pinecone_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -62,6 +65,8 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
         except ImportError:
             raise ValueError(import_err_msg)
         self._pinecone_index = cast(pinecone.Index, pinecone_index)
+
+        self._pinecone_kwargs = pinecone_kwargs or {}
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         super().__init__(
@@ -77,6 +82,14 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTPineconeIndexQuery,
+            QueryMode.EMBEDDING: GPTPineconeIndexQuery,
+        }
 
     def _add_document_to_index(
         self,
@@ -94,7 +107,7 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
 
             while True:
                 new_id = get_new_id(set())
-                result = self._pinecone_index.fetch([new_id])
+                result = self._pinecone_index.fetch([new_id], **self._pinecone_kwargs)
                 if len(result["vectors"]) == 0:
                     break
 
@@ -103,10 +116,12 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
                 "doc_id": document.get_doc_id(),
             }
 
-            self._pinecone_index.upsert([(new_id, text_embedding, metadata)])
+            self._pinecone_index.upsert(
+                [(new_id, text_embedding, metadata)], **self._pinecone_kwargs
+            )
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> PineconeIndexStruct:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
@@ -124,7 +139,9 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         # delete by filtering on the doc_id metadata
-        self._pinecone_index.delete(filter={"doc_id": {"$eq": doc_id}})
+        self._pinecone_index.delete(
+            filter={"doc_id": {"$eq": doc_id}}, **self._pinecone_kwargs
+        )
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""

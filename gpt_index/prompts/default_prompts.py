@@ -2,6 +2,7 @@
 
 from gpt_index.prompts.prompts import (
     KeywordExtractPrompt,
+    KnowledgeGraphPrompt,
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -166,7 +167,7 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
 DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
 
 # NOTE: taken from langchain and adapted
-# shorturl.at/nqyD1gT
+# https://tinyurl.com/b772sd77
 DEFAULT_TEXT_TO_SQL_TMPL = (
     "Given an input question, first create a syntactically correct SQL query "
     "to run, then look at the results of the query and return the answer.\n"
@@ -229,4 +230,30 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
 )
 DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
     DEFAULT_REFINE_TABLE_CONTEXT_TMPL
+)
+
+
+############################################
+# Knowledge-Graph Table
+############################################
+
+DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
+    "Some text is provided below. Given the text, extract up to "
+    "{max_knowledge_triplets} "
+    "knowledge triplets in the form of (subject, predicate, object). Avoid stopwords.\n"
+    "---------------------\n"
+    "Example:"
+    "Text: Alice is Bob's mother."
+    "Triplets:\n(Alice, is mother of, Bob)\n"
+    "Text: Philz is a coffee shop founded in Berkeley in 1982.\n"
+    "Triplets:\n"
+    "(Philz, is, coffee shop)\n"
+    "(Philz, founded in, Berkeley)\n"
+    "(Philz, founded in, 1982)\n"
+    "---------------------\n"
+    "Text: {text}\n"
+    "Triplets:\n"
+)
+DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = KnowledgeGraphPrompt(
+    DEFAULT_KG_TRIPLET_EXTRACT_TMPL
 )

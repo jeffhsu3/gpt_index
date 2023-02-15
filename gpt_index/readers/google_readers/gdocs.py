@@ -1,5 +1,6 @@
 """Google docs reader."""
 
+import logging
 import os
 from typing import Any, List
 
@@ -158,6 +159,6 @@ class GoogleDocsReader(BaseReader):
 
 if __name__ == "__main__":
     reader = GoogleDocsReader()
-    print(
-        reader.load_data(document_ids=["1B2CWZ6YleoCo6oYr9_WbnaShzSOm6yQ9gUIU_GNo8nU"])
+    logging.info(
+        reader.load_data(document_ids=["11ctUj_tEf5S8vs_dk8_BNi-Zk8wW5YFhXkKqtmU_4B8"])
     )

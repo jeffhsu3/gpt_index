@@ -41,12 +41,10 @@ You may choose to manually specify the summary text, or use GPT Index itself to 
 a summary, for instance with the following:
 
 ```python
-index1.set_text(
-    index1.query(
-        "What is a summary of this document?", 
-        mode="summarize"
-    )
+summary = index1.query(
+    "What is a summary of this document?", mode="summarize"
 )
+index1.set_text(str(summary))
 ```
 
 **If specified**, this summary text for each subindex can be used to refine the answer during query-time. 
@@ -60,6 +58,28 @@ list_index = GPTListIndex([index1, index2, index3])
 ```
 
 ![](/_static/composability/diagram.png)
+
+
+### Defining a Graph Structure
+
+
+Finally, we define a `ComposableGraph` to "wrap" the composed index graph.
+We can do this by simply feeding in the top-level index.
+This wrapper allows us to query, save, and load the graph to/from disk.
+
+```python
+
+from gpt_index.composability import ComposableGraph
+
+graph = ComposableGraph.build_from_index(list_index)
+
+# [Optional] save to disk
+graph.save_to_disk("save_path.json")
+
+# [Optional] load from disk
+graph = ComposableGraph.load_from_disk("save_path.json")
+
+```
 
 
 ### Querying the Top-Level Index
@@ -88,7 +108,7 @@ query_configs = [
     },
     ...
 ]
-response = list_index.query("Where did the author grow up?", mode="recursive", query_configs=query_configs)
+response = graph.query("Where did the author grow up?", query_configs=query_configs)
 ```
 
 ![](/_static/composability/diagram_q1.png)
