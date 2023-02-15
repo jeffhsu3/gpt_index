@@ -84,16 +84,23 @@ class GoogleDocsReader(BaseReader):
         created automatically when the authorization flow completes for the first
         time.
 
+        Try using service account credentials if token.json is not found.
+
         Returns:
             Credentials, the obtained credential.
         """
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
+        from google.oauth2 import service_account
 
         creds = None
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        elif os.path.exists("service_account.json"):
+            creds = service_account.Credentials.from_service_account_file(
+                "service_account.json")
+            return creds
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -152,5 +159,5 @@ class GoogleDocsReader(BaseReader):
 if __name__ == "__main__":
     reader = GoogleDocsReader()
     print(
-        reader.load_data(document_ids=["11ctUj_tEf5S8vs_dk8_BNi-Zk8wW5YFhXkKqtmU_4B8"])
+        reader.load_data(document_ids=["1B2CWZ6YleoCo6oYr9_WbnaShzSOm6yQ9gUIU_GNo8nU"])
     )
