@@ -8,13 +8,7 @@ Welcome to LlamaIndex 🦙 (GPT Index)!
 
 LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
 
-   ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
-
-   **2/19/2023**: By default, our docs/notebooks/instructions now use the `llama-index` package. However the `gpt-index` package still exists as a duplicate!
-
-   **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
-
-- Github: https://github.com/jerryjliu/gpt_index
+- Github: https://github.com/jerryjliu/llama_index
 - PyPi:
    - LlamaIndex: https://pypi.org/project/llama-index/.
    - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
@@ -59,29 +53,42 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Guides
 
-   guides/primer.md 
-   guides/usage_pattern.md
-   guides/use_cases.md
-   guides/index_guide.md
-   guides/sql_guide.md
+   guides/primer.rst
+   guides/tutorials.rst
+   guides/notebooks.rst
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Use Cases
+
+   use_cases/queries.md
+   use_cases/apps.md
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Technical How To
+   :caption: Key Components
 
    how_to/data_connectors.md
-   how_to/composability.md
-   how_to/update.md
-   how_to/cost_analysis.md
-   how_to/embeddings.md
-   how_to/vector_stores.md
-   how_to/custom_prompts.md
-   how_to/custom_llms.md
-   how_to/using_with_langchain.md
+   how_to/indices.rst
+   how_to/query_interface.rst
+   how_to/customization.rst
+   how_to/analysis.rst
+   how_to/output_parsing.md
+   how_to/integrations.rst
+
+   .. evaluation
+   .. integrations
+
+   .. how_to/composability.md
+   .. how_to/update.md
+   .. how_to/cost_analysis.md
+   .. how_to/vector_stores.md
+   .. how_to/using_with_langchain.md
 
 
 .. toctree::
@@ -93,12 +100,12 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/composability.rst
    reference/readers.rst
    reference/prompts.rst
-   reference/llm_predictor.rst
-   reference/prompt_helper.rst
-   reference/embeddings.rst
+   reference/service_context.rst
+   reference/optimizers.rst
    reference/struct_store.rst
    reference/response.rst
    reference/playground.rst
+   reference/node_parser.rst
    reference/example_notebooks.rst
    reference/langchain_integrations/base.rst
 
