@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
-
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -241,7 +240,13 @@ def test_query(
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:Hello world.")
+    expected_answer = (
+        "What is?:Hello world.:"
+        "This is a test.:"
+        "This is another test.:"
+        "This is a test v2."
+    )
+    assert str(response) == expected_answer
     node_info = (
         response.source_nodes[0].node.node_info
         if response.source_nodes[0].node.node_info
@@ -324,11 +329,14 @@ def test_query_with_keywords(
     query_str = "What is?"
     query_kwargs.update({"required_keywords": ["test"]})
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:This is a test.")
+    expected_answer = (
+        "What is?:This is a test.:" "This is another test.:" "This is a test v2."
+    )
+    assert str(response) == expected_answer
 
-    query_kwargs.update({"exclude_keywords": ["Hello"]})
+    query_kwargs.update({"exclude_keywords": ["test"], "required_keywords": []})
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:This is a test.")
+    assert str(response) == ("What is?:Hello world.")
 
 
 @patch_common
@@ -456,7 +464,13 @@ def test_async_query(
     query_str = "What is?"
     task = index.aquery(query_str, mode="default", **query_kwargs)
     response = asyncio.run(task)
-    assert str(response) == ("What is?:Hello world.")
+    expected_answer = (
+        "What is?:Hello world.:"
+        "This is a test.:"
+        "This is another test.:"
+        "This is a test v2."
+    )
+    assert str(response) == expected_answer
     node_info = (
         response.source_nodes[0].node.node_info
         if response.source_nodes[0].node.node_info
@@ -471,7 +485,7 @@ def test_async_query(
     query_kwargs_copy["response_mode"] = "tree_summarize"
     task = index.aquery(query_str, mode="default", **query_kwargs_copy)
     response = asyncio.run(task)
-    assert str(response) == ("What is?:Hello world.")
+    assert str(response) == expected_answer
     node_info = (
         response.source_nodes[0].node.node_info
         if response.source_nodes[0].node.node_info

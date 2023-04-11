@@ -7,7 +7,7 @@ import pytest
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
@@ -245,7 +245,10 @@ def test_summarize_query(
     }
     # TODO: fix unit test later
     response = tree.query(query_str, mode="summarize", **query_kwargs)
-    assert str(response) == ("What is?:Hello world.")
+    print(str(response))
+    assert str(response) == (
+        "What is?:Hello world.:This is a test.:This is another test.:This is a test v2."
+    )
 
     # test that default query fails
     with pytest.raises(ValueError):

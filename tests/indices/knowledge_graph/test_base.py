@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -15,7 +15,6 @@ from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
 )
-from gpt_index.data_structs.node_v2 import Node
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -244,7 +243,16 @@ def test_query(
     index = GPTKnowledgeGraphIndex.from_documents(documents)
     response = index.query("foo")
     # when include_text is True, the first node is the raw text
-    assert str(response) == "foo:(foo, is, bar)"
+    # the second node is the query
+    rel_initial_text = (
+        "The following are knowledge triplets "
+        "in the form of (subset, predicate, object):"
+    )
+    expected_response = (
+        "foo:(foo, is, bar):" + rel_initial_text + ":('foo', 'is', 'bar')"
+    )
+
+    assert str(response) == expected_response
     assert response.extra_info is not None
     assert response.extra_info["kg_rel_map"] == {
         "foo": [("bar", "is")],
